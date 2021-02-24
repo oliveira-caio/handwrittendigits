@@ -22,10 +22,10 @@ impl Network {
 	    biases.push(layer);
 	}
 	
-	for _ in 0..y.len() {
+	for i in 0..y.len() {
 	    let mut linha = Vec::new();
-	    for i in x.iter() {
-		let coluna = (0..*i).map(|_| rand::thread_rng().gen_range(-1.0,1.0)).collect();
+	    for _ in 0..y[i] {
+		let coluna = (0..x[i]).map(|_| rand::thread_rng().gen_range(-1.0,1.0)).collect();
 		linha.push(coluna);
 	    }
 	    weights.push(linha);
@@ -38,5 +38,5 @@ impl Network {
 fn main() {
     let teste = vec![2,3,1];
     let net = Network::new(teste);
-    println!("{:#?}, {}", net.weights, net.weights[0][0][1]);
+    println!("{:#?}, {}", net.weights, net.weights[1][0][2]);
 }
