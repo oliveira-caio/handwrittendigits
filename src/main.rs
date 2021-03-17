@@ -98,13 +98,13 @@ impl Network {
 		let mut nabla_w = Vec::new();
 		
 		for i in 0..self.biases.len() {
-			nabla_b[i] = vec![0.0; (self.biases[i]).len()];
+			nabla_b.push(vec![0.0; (self.biases[i]).len()]);
 		}
 		
 		for i in 0..self.weights.len() {
-			nabla_w[i] = vec![vec![0.0]; (self.weights[i]).len()];
+			nabla_w.push(vec![Vec::new(); (self.weights[i]).len()]);
 			for j in 0..nabla_w[i].len() {
-				nabla_w[i][j] = vec![0.0; (self.weights[i][j]).len()];
+				nabla_w[i].push(vec![0.0; (self.weights[i][j]).len()]);
 			}
 		}
 		
