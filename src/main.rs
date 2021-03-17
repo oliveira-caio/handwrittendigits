@@ -3,26 +3,26 @@ use std::f64::consts::E;
 
 #[derive(Debug)]
 struct Network {
-    num_layers: u32,
-    sizes: Vec<u64>,
-    biases: Vec<Vec<f64>>,
-    weights: Vec<Vec<Vec<f64>>>,
+	num_layers: u32,
+	sizes: Vec<u64>,
+	biases: Vec<Vec<f64>>,
+	weights: Vec<Vec<Vec<f64>>>,
 }
 
 impl Network {
-    fn new(sizes: Vec<u64>) -> Network {
+	fn new(sizes: Vec<u64>) -> Network {
 		let num_layers = sizes.len() as u32;
 		let sizes = sizes;
 		let mut biases = Vec::new();
 		let mut weights = Vec::new();
 		let x = &sizes[..sizes.len()-1];
 		let y = &sizes[1..];
-		
+
 		for i in y.iter() {
 			let layer = (0..*i).map(|_| rand::thread_rng().gen_range(-1.0,1.0)).collect();
 			biases.push(layer);
 		}
-		
+
 		for i in 0..y.len() {
 			let mut linha = Vec::new();
 			for _ in 0..y[i] {
@@ -31,7 +31,7 @@ impl Network {
 			}
 			weights.push(linha);
 		}
-		
+
 		Network { num_layers, sizes, biases, weights }
     }
 
@@ -40,13 +40,12 @@ impl Network {
 		let mut result = Vec::new();
 
 		for (b, w) in self.biases.iter().zip(self.weights.iter()) {
-			result = vec_sigmoid(&dot(w, &result)
-							 .iter()
-							 .zip(b.iter())
-							 .map(|(&u, &v)| u+v)
-							 .collect());
+			result = vec_sigmoid(&dot(w, &result).iter()
+								 .zip(b.iter())
+								 .map(|(&u, &v)| u+v)
+								 .collect());
 		}
-		
+
 		result
 	}
 
@@ -62,12 +61,12 @@ impl Network {
 				mini_batches.push(training_data[i..i+mini_batch_size as usize].to_vec());
 				i += mini_batch_size as usize;
 			}
-			
+
 			for mini_batch in mini_batches.iter() {
 				Network::update_mini_batch(self, mini_batch, eta);
 			}
 		}
-	 }
+	}
 
 	// """Return the number of test inputs for which the neural
     //     network outputs the correct result. Note that the neural
@@ -78,7 +77,7 @@ impl Network {
 		let mut soma = 0;
 		let mut a = test_data.0;
 		let b = test_data.1;
-		
+
 		for i in 0..a.len() {
 			let x = argmax(&Network::feedforward(&self, &mut a));
 			test_results.push((x,b[i]));
@@ -155,9 +154,9 @@ impl Network {
 				.collect();
 			nabla_b.push(delta.clone());
 			nabla_w.push(
-				multiplica_matriz(&vec![delta.clone()],
-								  &transpose(
-									  &vec![activations[activations.len() - 2 as usize].clone()])).clone());
+				multiplica_matrizes(&vec![delta.clone()],
+									&transpose(
+										&vec![activations[activations.len() - 2 as usize].clone()])).clone());
 			
 			for l in 2..self.num_layers {
 				z = zs[zs.len() - 1 as usize].clone();
@@ -169,9 +168,9 @@ impl Network {
 					.collect();
 				nabla_b.push(delta.clone());
 				nabla_w.push(
-				multiplica_matriz(&vec![delta.clone()],
-								  &transpose(
-									  &vec![activations[activations.len() - l as usize - 1].clone()])).clone());
+					multiplica_matrizes(&vec![delta.clone()],
+										&transpose(
+											&vec![activations[activations.len() - l as usize - 1].clone()])).clone());
 			}
 
 			let nabla_b = inverte_vetor(&nabla_b);
@@ -186,7 +185,7 @@ impl Network {
 	}
 }
 
-fn multiplica_matriz(matriz1: &Vec<Vec<f64>>, matriz2: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+fn multiplica_matrizes(matriz1: &Vec<Vec<f64>>, matriz2: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 	let mut aux = 0.0;
 	let mut matriz3 = vec![vec![0.0]];
 	
@@ -214,6 +213,7 @@ fn soma_matrizes(matriz1: &Vec<Vec<f64>>, matriz2: &Vec<Vec<f64>>) -> Vec<Vec<f6
 			matriz3[i][j] = matriz1[i][j] + matriz2[i][j];
 		}
 	}
+	
 	matriz3
 }
 
