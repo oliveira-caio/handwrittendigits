@@ -286,10 +286,14 @@ fn shuffle<T: Copy>(slice: &mut [T]) {
 
 fn main() {
     let teste: Vec<u64> = vec![2,3,1];
-    let net = Network::new(teste);
-	
-	let m = vec![vec![1.0, 2.0], vec![3.0, 4.0], vec![3.0, -4.0]];
-	let n = vec![vec![10.0, -1.0], vec![30.0, -5.0]];
+    let mut net = Network::new(teste);
 
-	println!("{:?}", multiplica_matrizes(&m, &n));
+    let mut training_data = Vec::new();
+    for i in 0..100 {
+        let input: Vec<f64> = (0..2).map(|_| rand::thread_rng().gen_range::<f64>(0.0, 1.0)).collect();
+        let output: Vec<f64> = (0..1).map(|_| rand::thread_rng().gen_range::<f64>(0.0, 1.0)).collect();
+        training_data.push((input, output))
+    }
+
+    net.sgd(&mut training_data,3,100,3.0);
 }
