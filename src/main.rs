@@ -194,7 +194,7 @@ impl Network {
 
 fn multiplica_matrizes(matriz1: &Vec<Vec<f64>>, matriz2: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
 	let mut aux = 0.0;
-	let mut matriz3 = vec![vec![0.0]];
+	let mut matriz3 = vec![vec![0.0; matriz2[0].len()]; matriz1.len()];
 	
 	for i in 0..matriz1.len() { // 2
 		for j in 0..matriz1[i].len() { // 3
@@ -292,5 +292,8 @@ fn main() {
     let teste: Vec<u64> = vec![2,3,1];
     let net = Network::new(teste);
 	
-	println!("{:#?}, {}", net.weights, net.weights[1][0][2]);
+	let m = vec![vec![1.0,2.0], vec![3.0,4.0]];
+	let n = vec![vec![10.0,30.0], vec![40.0,50.0]];
+
+	println!("{:?}", multiplica_matrizes(&m, &n));
 }
