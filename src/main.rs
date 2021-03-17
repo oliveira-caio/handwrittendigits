@@ -35,7 +35,6 @@ impl Network {
 		Network { num_layers, sizes, biases, weights }
     }
 
-	// Return the output of the network if ``a`` is input.
 	fn feedforward(&self, vetor: &Vec<f64>) -> Vec<f64> {
 		let mut result = Vec::new();
 
@@ -75,10 +74,6 @@ impl Network {
 		}
 	}
 
-	// """Return the number of test inputs for which the neural
-    //     network outputs the correct result. Note that the neural
-    //     network's output is assumed to be the index of whichever
-    //     neuron in the final layer has the highest activation."""
 	fn evaluate(&self, test_data: (Vec<f64>, Vec<f64>)) -> u64 {
 		let mut test_results = Vec::new();
 		let mut soma = 0;
@@ -214,7 +209,7 @@ fn soma_vetores(vetor1: &Vec<f64>, vetor2: &Vec<f64>) -> Vec<f64> {
 }
 
 fn soma_matrizes(matriz1: &Vec<Vec<f64>>, matriz2: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
-	let mut matriz3: Vec<Vec<f64>> = Vec::new();
+	let mut matriz3: Vec<Vec<f64>> = vec![vec![0.0; matriz1[0].len()]; matriz1.len()];
 	
 	for i in 0..matriz1.len() {
 		for j in 0..matriz1[i].len() {
@@ -230,7 +225,7 @@ fn inverte_vetor<T: Clone>(vetor: &Vec<T>) -> Vec<T> {
 }
 
 fn transpose(matriz: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
-	let mut transposta = vec![vec![0.0]];
+	let mut transposta = vec![vec![0.0; matriz.len()]; matriz[0].len()];
 
 	for i in 0..matriz.len() {
 		for j in 0..matriz[i].len() {
