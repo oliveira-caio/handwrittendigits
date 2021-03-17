@@ -196,12 +196,13 @@ fn multiplica_matrizes(matriz1: &Vec<Vec<f64>>, matriz2: &Vec<Vec<f64>>) -> Vec<
 	let mut aux = 0.0;
 	let mut matriz3 = vec![vec![0.0; matriz2[0].len()]; matriz1.len()];
 	
-	for i in 0..matriz1.len() { // 2
-		for j in 0..matriz1[i].len() { // 3
-			for k in 0..matriz1[i].len() { // 3
+	for i in 0..matriz1.len() {
+		for j in 0..matriz2[i].len() {
+			for k in 0..matriz2.len() {
 				aux += matriz1[i][k]*matriz2[k][j];
 			}
 			matriz3[i][j] = aux;
+			aux = 0.0;
 		}
 	}
 
@@ -278,8 +279,8 @@ fn sigmoid_prime(vetor: &Vec<f64>) -> Vec<f64> {
 
 fn shuffle<T: Copy>(slice: &mut [T]) {
     let mut rng = rand::thread_rng();
-
     let len = slice.len();
+	
     for i in 0..len {
         let next = rng.gen_range(i, len);
         let tmp = slice[i];
@@ -292,8 +293,8 @@ fn main() {
     let teste: Vec<u64> = vec![2,3,1];
     let net = Network::new(teste);
 	
-	let m = vec![vec![1.0,2.0], vec![3.0,4.0]];
-	let n = vec![vec![10.0,30.0], vec![40.0,50.0]];
+	let m = vec![vec![1.0, 2.0], vec![3.0, 4.0]];
+	let n = vec![vec![10.0], vec![30.0]];
 
 	println!("{:?}", multiplica_matrizes(&m, &n));
 }
