@@ -49,14 +49,21 @@ impl Network {
 		result
 	}
 
-	fn sgd(&mut self, training_data: Vec<(Vec<f64>, Vec<f64>)>, epochs: u8, mini_batch_size: u8, eta: f64) {
-		// let mut rng = thread_rng();
+	fn sgd(&mut self, training_data: &mut Vec<(Vec<f64>, Vec<f64>)>, epochs: u8, mini_batch_size: u8, eta: f64) {
 		let mut i: usize = 0;
 		let mut mini_batches: Vec<Vec<(Vec<f64>, Vec<f64>)>> = Vec::new();
+		let mut aux: Vec<usize> = (0..training_data.len()).collect();
+		let mut tmp = (vec![0.0], vec![0.0]);
+		
+		shuffle(&mut aux[..]);
 		
 		for j in 0..(epochs as usize) {
-			// training_data.shuffle(&mut rng);
-
+			for k in 0..aux.len() {
+				tmp = training_data[k].clone();
+				training_data[k] = training_data[aux[k]].clone();
+				training_data[aux[k]] = tmp;
+			}
+			
 			while i < training_data.len() {
 				mini_batches.push(training_data[i..i+mini_batch_size as usize].to_vec());
 				i += mini_batch_size as usize;
@@ -267,6 +274,18 @@ fn vec_sigmoid(vetor: &Vec<f64>) -> Vec<f64> {
 
 fn sigmoid_prime(vetor: &Vec<f64>) -> Vec<f64> {
 	vetor.iter().map(|&x| sigmoid(&x)*(1.0-sigmoid(&x))).collect()
+}
+
+fn shuffle<T: Copy>(slice: &mut [T]) {
+    let mut rng = rand::thread_rng();
+
+    let len = slice.len();
+    for i in 0..len {
+        let next = rng.gen_range(i, len);
+        let tmp = slice[i];
+        slice[i] = slice[next];
+        slice[next] = tmp;
+    }
 }
 
 fn main() {
