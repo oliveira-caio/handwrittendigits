@@ -273,7 +273,7 @@ fn matriz_aleatoria(linhas: usize, colunas: usize) -> Vec<Vec<f32>> {
 	matriz
 }
 
-fn my_shuffle<T: Clone>(vetor: &Vec<T>) -> Vec<T> {
+fn my_shuffle<T: Clone>(vetor: &[T]) -> Vec<T> {
 	let mut shuffled = Vec::new();
 	let mut aux: Vec<usize> = (0..vetor.len()).collect();
 
@@ -290,11 +290,10 @@ fn main() {
     let teste: Vec<u8> = vec![2,3,1];
     let mut net = Network::new(teste);
     let mut training_data = Vec::new();
-	let mut rng = rand::thread_rng();
-
+	
     for i in 0..100 {
-        let input: Vec<f32> = (0..2).map(|_| rng.gen_range(-0.0..1.0)).collect();
-        let output: Vec<f32> = (0..1).map(|_| rng.gen_range(-0.0..1.0)).collect();
+        let input: Vec<f32> = (0..2).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
+        let output: Vec<f32> = (0..1).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
         training_data.push((input, output))
     }
 
