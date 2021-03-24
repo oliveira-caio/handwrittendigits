@@ -291,7 +291,7 @@ fn main() {
     let mut net = Network::new(teste);
     let mut training_data = Vec::new();
 	
-    for i in 0..100 {
+    for _ in 0..100 {
         let input: Vec<f32> = (0..2).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
         let output: Vec<f32> = (0..1).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
         training_data.push((input, output))
