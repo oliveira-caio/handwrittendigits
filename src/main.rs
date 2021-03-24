@@ -97,10 +97,8 @@ impl Network {
 		}
 		
 		for i in 0..self.weights.len() {
-			nabla_w.push(Vec::new());
-			for j in 0..self.weights[i].len() {
-				nabla_w[i].push(vec![0.0; (self.weights[i][j]).len()]);
-			}
+			nabla_w.push(vec![vec![0.0; self.weights[i][0].len()];
+							  self.weights[i].len()]);
 		}
 		
 		for (x,y) in mini_batch.iter() {
@@ -134,7 +132,7 @@ impl Network {
 	fn backprop(&self, activation: &Vec<f32>, y: &Vec<f32>) ->
 		(Vec<Vec<f32>>, Vec<Vec<Vec<f32>>>) {
 			let mut nabla_b: Vec<Vec<f32>> = Vec::new();
-			let mut nabla_w: Vec<Vec<Vec<f32>>> = vec![vec![vec![0.0]]; self.weights.len()];
+			let mut nabla_w: Vec<Vec<Vec<f32>>> = Vec::new();
 			let mut activations = vec![activation.clone()];
 			let mut zs = Vec::new();
 			let mut z = Vec::new();
@@ -156,10 +154,10 @@ impl Network {
 				.collect();
 			nabla_b.push(delta.clone());
 			nabla_w.push(multiplica_matrizes(&transpose(&vec![delta.clone()]),
-											 &vec![activations[activations.len() - 2].clone()]));
+										&vec![activations[activations.len() - 2].clone()]));
 			
 			for l in 2..self.num_layers {
-				z = zs[zs.len() - 1].clone();
+				z = zs[zs.len() - l as usize].clone();
 				let sp = sigmoid_prime(&z);
 				delta = dot(&transpose(&self.weights[self.weights.len() - (l as usize) + 1]),
 							&delta)
@@ -171,9 +169,10 @@ impl Network {
 				nabla_w.push(multiplica_matrizes(&transpose(&vec![delta.clone()]),
 												 &vec![activations[activations.len() - (l as usize) - 1].clone()]));
 			}
-            nabla_b.reverse();
-            nabla_w.reverse();
 
+			nabla_b.reverse();
+			nabla_w.reverse();
+			
 			(nabla_b, nabla_w)
 		}
 	
@@ -181,6 +180,12 @@ impl Network {
 		output_activations.iter().zip(y.iter()).map(|(&u, &v)| u-v).collect()
 	}
 }
+
+
+fn matriz_de_zeros(linhas: usize, colunas: usize) -> Vec<Vec<f32>> {
+	vec![vec![0.0; colunas]; linhas]
+}
+	
 
 fn multiplica_matrizes(matriz1: &Vec<Vec<f32>>, matriz2: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
 	let mut aux = 0.0;
@@ -206,12 +211,14 @@ fn soma_vetores(vetor1: &Vec<f32>, vetor2: &Vec<f32>) -> Vec<f32> {
 fn soma_matrizes(matriz1: &Vec<Vec<f32>>, matriz2: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
 	let mut matriz3: Vec<Vec<f32>> = vec![vec![0.0; matriz1[0].len()]; matriz1.len()];
 	
+	//println!("{:?}\n\n {:?}\n\n {:?}\n\n", matriz1, matriz2, matriz3);
 	for i in 0..matriz1.len() {
 		for j in 0..matriz1[0].len() {
 			matriz3[i][j] = matriz1[i][j] + matriz2[i][j];
 		}
 	}
 	
+
 	matriz3
 }
 
@@ -279,18 +286,17 @@ fn my_shuffle<T: Clone>(vetor: &[T]) -> Vec<T> {
 }
 
 fn main() {
-    let teste: Vec<u8> = vec![2,3,1];
+    let teste: Vec<u8> = vec![3,4,3];
     let mut net = Network::new(teste);
     let mut training_data = Vec::new();
 	
     for _ in 0..1000 {
-        let input: Vec<f32> = (0..2).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
-        let output: Vec<f32> = (0..1).map(|_| 0.0).collect();
+        let input: Vec<f32> = (0..3).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
+        let output: Vec<f32> = (0..3).map(|_| 0.0).collect();
         training_data.push((input, output))
     }
 
-    net.sgd(&mut training_data,3,100,3.0);
+    net.sgd(&mut training_data, 3, 100, 3.0);
     let acc = net.evaluate(training_data);
     println!("{:?}", acc);
-
 }
