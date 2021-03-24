@@ -170,8 +170,10 @@ impl Network {
 				nabla_w.push(multiplica_matrizes(&transpose(&vec![delta.clone()]),
 												 &vec![activations[activations.len() - (l as usize) - 1].clone()]));
 			}
+            nabla_b.reverse();
+            nabla_w.reverse();
 
-			(inverte_vetor(&nabla_b), inverte_vetor(&nabla_w))
+			(nabla_b, nabla_w)
 		}
 	
 	fn cost_derivative(output_activations: &Vec<f32>, y: &Vec<f32>) -> Vec<f32> {
@@ -210,10 +212,6 @@ fn soma_matrizes(matriz1: &Vec<Vec<f32>>, matriz2: &Vec<Vec<f32>>) -> Vec<Vec<f3
 	}
 	
 	matriz3
-}
-
-fn inverte_vetor<T: Clone>(vetor: &Vec<T>) -> Vec<T> {
-	vetor.iter().rev().cloned().collect()
 }
 
 fn transpose(matriz: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
@@ -284,11 +282,14 @@ fn main() {
     let mut net = Network::new(teste);
     let mut training_data = Vec::new();
 	
-    for _ in 0..100 {
+    for _ in 0..1000 {
         let input: Vec<f32> = (0..2).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
-        let output: Vec<f32> = (0..1).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
+        let output: Vec<f32> = (0..1).map(|_| 0.0).collect();
         training_data.push((input, output))
     }
 
     net.sgd(&mut training_data,3,100,3.0);
+    let acc = net.evaluate(training_data);
+    println!("{:?}", acc);
+
 }
