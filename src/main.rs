@@ -76,7 +76,11 @@ impl Network {
 		}
 
 		for (u,v) in test_results.iter() {
-			if u == *v {
+            let mut diff = 0.0;
+            for i in 0..u.len() {
+                diff += (u[i] - v[i]).abs();
+            }
+			if diff < 0.01 {
 				soma += 1;
 			}
 		}
@@ -234,18 +238,6 @@ fn dot(matriz: &Vec<Vec<f32>>, vetor: &Vec<f32>) -> Vec<f32> {
 	}
 
 	resultado
-}
-
-fn argmax(vetor: &Vec<f32>) -> f32 {
-	let mut max: f32 = vetor[0];
-	
-	for x in vetor.iter() {
-		if max < *x {
-			max = *x;
-		}
-	}
-
-	max
 }
 
 fn sigmoid(x: &f32) -> f32 {
