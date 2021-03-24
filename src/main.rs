@@ -97,8 +97,8 @@ impl Network {
 		}
 		
 		for i in 0..self.weights.len() {
-			nabla_w.push(vec![Vec::new(); (self.weights[i]).len()]);
-			for j in 0..nabla_w[i].len() {
+			nabla_w.push(Vec::new());
+			for j in 0..self.weights[i].len() {
 				nabla_w[i].push(vec![0.0; (self.weights[i][j]).len()]);
 			}
 		}
@@ -115,16 +115,17 @@ impl Network {
 			}
 		}
 
+
 		for i in 0..self.biases.len() {
 			for j in 0..self.biases[i].len() {
-				self.biases[i][j] = self.biases[i][j] - self.biases[i][j] * eta / (mini_batch.len() as f32);
+				self.biases[i][j] = self.biases[i][j] - nabla_b[i][j] * eta / (mini_batch.len() as f32);
 			}
 		}
 
 		for i in 0..self.weights.len() {
 			for j in 0..self.weights[i].len() {
 				for k in 0..self.weights[i][j].len() {
-					self.weights[i][j][k] = self.weights[i][j][k] - self.weights[i][j][k] * eta / (mini_batch.len() as f32);
+					self.weights[i][j][k] = self.weights[i][j][k] - nabla_w[i][j][k] * eta / (mini_batch.len() as f32);
 				}
 			}
 		}
