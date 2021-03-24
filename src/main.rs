@@ -28,8 +28,8 @@ impl Network {
 		Network { num_layers, sizes, biases, weights }
     }
 
-	fn feedforward(&self, vetor: &Vec<f32>) -> Vec<f32> {
-		let mut result = Vec::new();
+	fn feedforward(&self, vetor: Vec<f32>) -> Vec<f32> {
+		let mut result = vetor;
 
 		for (b, w) in self.biases.iter().zip(self.weights.iter()) {
 			result = vec_sigmoid(&dot(w, &result)
@@ -64,18 +64,19 @@ impl Network {
 		}
 	}
 
-	fn evaluate(&self, test_data: (Vec<f32>, Vec<f32>)) -> u16 {
+	fn evaluate(&self, test_data: Vec<(Vec<f32>, Vec<f32>)>) -> u16 {
 		let mut test_results = Vec::new();
 		let mut soma = 0;
-		let (mut a, b) = test_data;
 
-		for i in 0..a.len() {
-			let x = argmax(&Network::feedforward(&self, &mut a));
-			test_results.push((x,b[i]));
+		for i in 0..test_data.len() {
+            let a = &test_data[i].0;
+            let b = &test_data[i].1;
+			let x = Network::feedforward(&self, a.to_vec());
+			test_results.push((x,b));
 		}
 
 		for (u,v) in test_results.iter() {
-			if *u == *v {
+			if u == *v {
 				soma += 1;
 			}
 		}
