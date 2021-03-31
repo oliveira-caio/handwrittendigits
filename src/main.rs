@@ -40,7 +40,7 @@ pub fn load_data(dataset_name: &str) -> Result<Vec<MnistImage>, std::io::Error> 
 		let start = i * image_shape;
 		let image_data = images_data.data[start..start + image_shape].to_vec();
 		let image_data: Vec<f64> = image_data.into_iter().map(|x| x as f64 / 255.).collect();
-		images.push(Array2::from_shape_vec((image_shape, i), image_data).unwrap());
+		images.push(Array2::from_shape_vec((image_shape, 1), image_data).unwrap());
 	}
 
 	let classifications: Vec<u8> = label_data.data.clone();
@@ -58,7 +58,7 @@ pub fn load_data(dataset_name: &str) -> Result<Vec<MnistImage>, std::io::Error> 
 
 impl MnistData {
 	fn new(f: &File) -> Result<MnistData, std::io::Error> {
-		let mut gz = GzDecoder::new(f).into_inner();
+		let mut gz = GzDecoder::new(f);
 		let mut contents: Vec<u8> = Vec::new();
 		gz.read_to_end(&mut contents)?;
 		let mut r = Cursor::new(&contents);
@@ -367,11 +367,13 @@ fn my_shuffle<T: Clone>(vetor: &[T]) -> Vec<T> {
 }
 
 fn main() {
-	let teste2 = load_data("t10k");
-    let teste: Vec<u8> = vec![3,4,3];
-    let mut net = Network::new(teste);
+    let net_sizes: Vec<u8> = vec![3,4,3];
+    let mut net = Network::new(net_sizes);
+
+    let train = load_data("train").unwrap();
     let mut training_data = Vec::new();
-	
+
+
     for _ in 0..1000 {
         let input: Vec<f32> = (0..3).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
         let output: Vec<f32> = (0..3).map(|_| 0.0).collect();
