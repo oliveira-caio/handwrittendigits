@@ -12,7 +12,7 @@ use byteorder::ReadBytesExt;
 #[derive(Debug)]
 struct Network {
 	num_layers: u8,
-	sizes: Vec<u8>,
+	sizes: Vec<u16>,
 	biases: Vec<Vec<f32>>,
 	weights: Vec<Vec<Vec<f32>>>,
 }
@@ -87,7 +87,7 @@ impl MnistData {
 }
 
 impl Network {
-	fn new(sizes: Vec<u8>) -> Network {
+	fn new(sizes: Vec<u16>) -> Network {
 		let num_layers = sizes.len() as u8;
 		let sizes = sizes;
 		let mut biases = Vec::new();
@@ -216,16 +216,17 @@ impl Network {
 			let mut nabla_w: Vec<Vec<Vec<f32>>> = Vec::new();
 			let mut activations = vec![activation.clone()];
 			let mut zs = Vec::new();
-			let mut z = Vec::new();
+			let mut z = activation.clone();
 			
 			for (b,w) in self.biases.iter().zip(self.weights.iter()) {
- 				z = dot(w, &activation)
+ 				z = dot(w, &z)
 					.iter()
 					.zip(b.iter())
 					.map(|(&u, &v)| u+v)
 					.collect();
 				zs.push(z.clone());
 				activations.push(vec_sigmoid(&z));
+                z = vec_sigmoid(&z);
 			}
 			
 			let mut delta: Vec<f32> = Network::cost_derivative(&activations[activations.len() - 1], &y)
@@ -367,20 +368,34 @@ fn my_shuffle<T: Clone>(vetor: &[T]) -> Vec<T> {
 }
 
 fn main() {
-    let net_sizes: Vec<u8> = vec![3,4,3];
+    let net_sizes: Vec<u16> = vec![784,30,10];
     let mut net = Network::new(net_sizes);
 
     let train = load_data("train").unwrap();
     let mut training_data = Vec::new();
-
-
-    for _ in 0..1000 {
-        let input: Vec<f32> = (0..3).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
-        let output: Vec<f32> = (0..3).map(|_| 0.0).collect();
+    for i in 0..train.len() {
+        let input_iter = train[i].image.into_iter();
+        let mut input: Vec<f32> = Vec::new();
+        for x in input_iter {
+            input.push(*x as f32);
+        }
+        let mut output: Vec<f32> = vec![0.0; 10];
+        output[train[i].classification as usize] = 1.0;
         training_data.push((input, output))
     }
 
-    net.sgd(&training_data, 3, 100, 3.0, Some(&training_data));
+
+    /*
+    let mut training_data = Vec::new();
+    for _ in 0..10000 {
+        let input: Vec<f32> = (0..2).map(|_| rand::thread_rng().gen_range(-1.0..1.0)).collect();
+        let output: Vec<f32> = (0..1).map(|_| 0.0).collect();
+        training_data.push((input, output))
+    }
+    */
+
+    println!("Starting...");
+    net.sgd(&training_data, 10, 100, 3.0, Some(&training_data));
     let acc = net.evaluate(training_data);
     println!("{:?}", acc);
 }
