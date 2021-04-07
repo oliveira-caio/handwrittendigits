@@ -115,7 +115,7 @@ impl Network {
 								 .map(|(&u, &v)| u+v)
 								 .collect());
 		}
-
+		println!("{:?}", result);
 		result
 	}
 
@@ -135,12 +135,11 @@ impl Network {
 
 			for mini_batch in mini_batches.iter() {
 				Network::update_mini_batch(self, mini_batch, eta);
-				println!("{:?}, \n {:?} \n", training_data[j].0, training_data[j].1);
 			}
 
 			match test_data {
-				Some(x) => println!("Epoch {}: {}/{}",
-									j, self.evaluate(x.to_vec()), x.len()),
+				Some(x) => println!("Epoch {}: {}/{} \n {:?}",
+									j, self.evaluate(x.to_vec()), x.len(), training_data[j].1),
 				None => println!("Epoch {} complete", j)
 			}
 		}
@@ -158,11 +157,7 @@ impl Network {
 		}
 
 		for (u,v) in test_results.iter() {
-            let mut diff = 0.0;
-            for i in 0..u.len() {
-                diff += (u[i] - v[i]).abs();
-            }
-			if diff < 0.01 {
+       		if argmax(&u) == argmax(&v) {
 				soma += 1;
 			}
 		}
@@ -279,6 +274,18 @@ fn multiplica_matrizes(matriz1: &Vec<Vec<f32>>, matriz2: &Vec<Vec<f32>>) -> Vec<
 	}
 
 	matriz3
+}
+
+fn argmax(v: &Vec<f32>) -> usize {
+	let x = v[0];
+	let mut index = 0;
+
+	for i in 0..v.len() {
+		if v[i] > x {
+			index = i;
+		}
+	}
+	index
 }
 
 fn soma_vetores(vetor1: &Vec<f32>, vetor2: &Vec<f32>) -> Vec<f32> {
