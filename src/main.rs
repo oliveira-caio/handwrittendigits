@@ -226,14 +226,14 @@ impl Network {
 				&output
 			) * sigmoid_prime(&zs[zs.len() - 1]);
 			nabla_b.push(delta.clone());
-			nabla_w.push(delta.t().dot(&activations[activations.len() - 2]));
+			nabla_w.push(delta.dot(&array![activations[activations.len() - 2]]));
 			
 			for l in 2..self.num_layers {
 				z = zs[zs.len() - l as usize].clone();
 				let sp = sigmoid_prime(&z);
 				delta = self.weights[self.weights.len() - (l as usize) + 1].dot(&delta) * sp;
 				nabla_b.push(delta.clone());
-				nabla_w.push(delta.t().dot(&activations[activations.len() - (l as usize) - 1]));
+				nabla_w.push(delta.dot(&array![activations[activations.len() - (l as usize) - 1]]);
 			}
 
 			nabla_b.reverse();
