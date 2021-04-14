@@ -233,7 +233,7 @@ impl Network {
 				let sp = sigmoid_prime(&z);
 				delta = self.weights[self.weights.len() - (l as usize) + 1].dot(&delta) * sp;
 				nabla_b.push(delta.clone());
-				nabla_w.push(delta.dot(&array![activations[activations.len() - (l as usize) - 1]]);
+				nabla_w.push(delta.dot(&array![activations[activations.len() - (l as usize) - 1]]));
 			}
 
 			nabla_b.reverse();
