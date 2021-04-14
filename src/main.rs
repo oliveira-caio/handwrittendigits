@@ -8,6 +8,7 @@ use flate2::read::GzDecoder;
 use std::fs::File;
 use byteorder::BigEndian;
 use byteorder::ReadBytesExt;
+use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 struct Network {
@@ -115,7 +116,6 @@ impl Network {
 								 .map(|(&u, &v)| u+v)
 								 .collect());
 		}
-		println!("{:?}", result);
 		result
 	}
 
@@ -126,20 +126,28 @@ impl Network {
 		let mut mini_batches: Vec<Vec<(Vec<f32>, Vec<f32>)>> = Vec::new();
 
 		for j in 0..epochs {
+            println!("Shuffling");
+            let shuffled = my_shuffle(&training_data);
 			while i < training_data.len() {
 				mini_batches.push(
-					my_shuffle(&training_data)[i..i+mini_batch_size].to_vec()
+					shuffled[i..i+mini_batch_size].to_vec()
 				);
 				i += mini_batch_size;
 			}
 
+            println!("Mini batches");
+            let mut current_iter = 0;
+            let start = Instant::now();
 			for mini_batch in mini_batches.iter() {
 				Network::update_mini_batch(self, mini_batch, eta);
+                let duration = start.elapsed();
+                println!("Mini batch {}/{} done, {:?} elapsed", current_iter, mini_batches.len(), duration);
+                current_iter += 1
 			}
 
 			match test_data {
-				Some(x) => println!("Epoch {}: {}/{} \n {:?}",
-									j, self.evaluate(x.to_vec()), x.len(), training_data[j].1),
+				Some(x) => println!("Epoch {}: {}/{}",
+									j, self.evaluate(x.to_vec()), x.len()),
 				None => println!("Epoch {} complete", j)
 			}
 		}
@@ -168,16 +176,16 @@ impl Network {
 	fn update_mini_batch(&mut self, mini_batch: &Vec<(Vec<f32>,Vec<f32>)>, eta: f32) {
 		let mut nabla_b = Vec::new();
 		let mut nabla_w = Vec::new();
-		
+
 		for i in 0..self.biases.len() {
 			nabla_b.push(vec![0.0; (self.biases[i]).len()]);
 		}
-		
+
 		for i in 0..self.weights.len() {
 			nabla_w.push(vec![vec![0.0; self.weights[i][0].len()];
 							  self.weights[i].len()]);
 		}
-		
+
 		for (x,y) in mini_batch.iter() {
 			let (delta_nabla_b, delta_nabla_w) = Network::backprop(self, x, y);
 			
@@ -371,9 +379,8 @@ fn main() {
     let net_sizes: Vec<u16> = vec![784,30,10];
     let mut net = Network::new(net_sizes);
 
-    let train = load_data("t10k").unwrap();
+    let train = load_data("train").unwrap();
     let mut training_data = Vec::new();
-	
     for i in 0..train.len() {
         let input_iter = train[i].image.into_iter();
         let mut input: Vec<f32> = Vec::new();
@@ -385,8 +392,23 @@ fn main() {
         training_data.push((input, output))
     }
 
+    let test = load_data("t10k").unwrap();
+    let mut test_data = Vec::new();
+    for i in 0..test.len() {
+        let input_iter = test[i].image.into_iter();
+        let mut input: Vec<f32> = Vec::new();
+        for x in input_iter {
+            input.push(*x as f32);
+        }
+        let mut output: Vec<f32> = vec![0.0; 10];
+        output[test[i].classification as usize] = 1.0;
+        test_data.push((input, output))
+    }
+
+
+
 	println!("Started.");
-    net.sgd(&training_data, 30, 10, 3.0, Some(&training_data));
+    net.sgd(&training_data, 30, 100, 3.0, Some(&test_data));
     let acc = net.evaluate(training_data);
     println!("{:?}", acc);
 }
