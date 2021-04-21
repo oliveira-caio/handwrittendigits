@@ -3,13 +3,14 @@ use byteorder::ReadBytesExt;
 use flate2;
 use flate2::read::GzDecoder;
 use ndarray::Array2;
-use ndarray_rand::rand_distr::Uniform;
+// use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use rand::seq::SliceRandom;
 use std::f32::consts::E;
 use std::fs::File;
 use std::io::{Cursor, Read};
-use std::time::Instant;
+// use std::time::Instant;
+use ndarray_rand::rand_distr::StandardNormal;
 
 #[derive(Debug)]
 struct Network {
@@ -97,11 +98,11 @@ impl Network {
         let mut weights = Vec::new();
 
         for y in sizes[1..].iter() {
-            biases.push(aleatory_vec(*y as usize));
+            biases.push(vec_random(*y as usize));
         }
 
         for (y, x) in sizes[1..].iter().zip(sizes[..sizes.len() - 1].iter()) {
-            weights.push(aleatory_matrix(*y as usize, *x as usize));
+            weights.push(matrix_random(*y as usize, *x as usize));
         }
 
         Network {
@@ -120,139 +121,6 @@ impl Network {
         }
 
         result
-    }
-
-    fn sgd(
-        &mut self,
-        training_data: &Vec<(Array2<f32>, Array2<f32>)>,
-        epochs: usize,
-        mini_batch_size: usize,
-        eta: f32,
-        test_data: Option<&Vec<(Array2<f32>, Array2<f32>)>>,
-    ) {
-        let mut i: usize = 0;
-        let mut mini_batches: Vec<Vec<(Array2<f32>, Array2<f32>)>> = Vec::new();
-
-        for j in 0..epochs {
-            // println!("Shuffling");
-            let shuffled = my_shuffle(&training_data);
-            while i < training_data.len() {
-                mini_batches.push(shuffled[i..i + mini_batch_size].to_vec());
-                i += mini_batch_size;
-            }
-
-            // println!("Mini batches");
-            let mut current_iter = 0;
-            let start = Instant::now();
-            for mini_batch in mini_batches.iter() {
-                Network::update_mini_batch(self, mini_batch, eta);
-                let duration = start.elapsed();
-                println!(
-                    "Mini batch {}/{} done, {:?} elapsed",
-                    current_iter,
-                    mini_batches.len(),
-                    duration
-                );
-                current_iter += 1
-            }
-
-            match test_data {
-                Some(x) => println!("Epoch {}: {}/{}", j, self.evaluate(x.to_vec()), x.len()),
-                None => println!("Epoch {} complete", j),
-            }
-        }
-    }
-
-    fn update_mini_batch(&mut self, mini_batch: &Vec<(Array2<f32>, Array2<f32>)>, eta: f32) {
-		// println!("update_mini_batch");
-        let mut nabla_b: Vec<Array2<f32>> = Vec::new();
-        let mut nabla_w: Vec<Array2<f32>> = Vec::new();
-        let nbatch = mini_batch.len() as f32;
-
-        for b in self.biases.iter() {
-            nabla_b.push(Array2::zeros(b.dim()));
-        }
-
-        for w in self.weights.iter() {
-            nabla_w.push(Array2::zeros(w.dim()));
-        }
-
-        for (x, y) in mini_batch.iter() {
-            let (delta_nabla_b, delta_nabla_w) = self.backprop(x, y);
-			
-			for (b, nb) in nabla_b.iter_mut().zip(delta_nabla_b.iter()) {
-        		*b += nb;
-			}
-
-			for (w, nw) in nabla_w.iter_mut().zip(delta_nabla_w.iter()) {
-        		*w += nw;
-			}
-
-			
-			
-            // for i in 0..delta_nabla_b.len() {
-            //     nabla_b[i] = nabla_b[i] + delta_nabla_b[i];
-            // }
-
-            // for i in 0..nabla_w.len() {
-            //     nabla_w[i] = nabla_w[i] + delta_nabla_w[i];
-            // }
-        }
-
-        for (b,nb) in self.biases.iter_mut().zip(nabla_b.iter()) {
-        	*b -= &nb.mapv(|x| x * eta / nbatch)
-        }
-
-        for (w,nw) in self.weights.iter_mut().zip(nabla_w.iter()) {
-        	*w -= &nw.mapv(|x| x * eta / nbatch)
-        }
-        //for i in 0..self.biases.len() {
-        //    self.biases[i] = self.biases[i] - nabla_b[i] * eta / nbatch;
-        //}
-
-        //for i in 0..self.weights.len() {
-        //    self.weights[i] = self.weights[i] - nabla_w[i] * eta / nbatch;
-        //}
-    }
-
-    fn backprop(
-        &self,
-        activation: &Array2<f32>,
-        output: &Array2<f32>,
-    ) -> (Vec<Array2<f32>>, Vec<Array2<f32>>) {
-		// println!("backprop");
-        let mut nabla_b: Vec<Array2<f32>> = Vec::new();
-        let mut nabla_w: Vec<Array2<f32>> = Vec::new();
-        let mut activations = vec![activation.clone()];
-        let mut zs = Vec::new();
-        let mut z = activation.clone();
-
-        for (b, w) in self.biases.iter().zip(self.weights.iter()) {
-            z = w.dot(&z) + b;
-            zs.push(z.clone());
-            activations.push(vec_sigmoid(&z));
-            z = vec_sigmoid(&z);
-        }
-
-        let mut delta: Array2<f32> =
-            Network::cost_derivative(&activations[activations.len() - 1], &output)
-            * sigmoid_prime(&zs[zs.len() - 1]);
-        nabla_b.push(delta.clone());
-		println!("\n {:?} \n", activations[activations.len() - 2]);
-        nabla_w.push(delta.t().dot(&activations[activations.len() - 1]));
-		
-        for l in 2..self.num_layers {
-            z = zs[zs.len() - l as usize].clone();
-            let sp = sigmoid_prime(&z);
-            delta = self.weights[self.weights.len() - (l as usize) + 1].dot(&delta) * sp;
-            nabla_b.push(delta.clone());
-            nabla_w.push(delta.t().dot(&activations[activations.len() - (l as usize) - 1]));
-        }
-
-        nabla_b.reverse();
-        nabla_w.reverse();
-
-        (nabla_b, nabla_w)
     }
 
 	fn evaluate(&self, test_data: Vec<(Array2<f32>, Array2<f32>)>) -> u16 {
@@ -275,8 +143,137 @@ impl Network {
 	
     fn cost_derivative(output_activations: &Array2<f32>, output: &Array2<f32>) -> Array2<f32> {
 		// println!("{:?} \n \n {:?} \n \n {:?}",
-		// 		 output, output_activations, output_activations-output);
+		 		 // output, output_activations, output_activations-output);
         output_activations - output
+    }
+
+    fn sgd(
+        &mut self,
+        training_data: &Vec<(Array2<f32>, Array2<f32>)>,
+        epochs: usize,
+        mini_batch_size: usize,
+        eta: f32,
+        test_data: Option<&Vec<(Array2<f32>, Array2<f32>)>>,
+    ) {
+        let mut i: usize = 0;
+        let mut mini_batches: Vec<Vec<(Array2<f32>, Array2<f32>)>> = Vec::new();
+
+        for j in 0..epochs {
+            let shuffled = my_shuffle(&training_data);
+            while i < training_data.len() {
+                mini_batches.push(shuffled[i..i + mini_batch_size].to_vec());
+                i += mini_batch_size;
+            }
+
+            // let mut current_iter = 0;
+            // let start = Instant::now();
+            for mini_batch in mini_batches.iter() {
+                self.update_mini_batch(mini_batch, eta);
+                // let duration = start.elapsed();
+                // println!(
+                //     "Mini batch {}/{} done, {:?} elapsed",
+                //     current_iter,
+                //     mini_batches.len(),
+                //     duration
+                // );
+                // current_iter += 1
+            }
+
+            match test_data {
+                Some(x) => println!("Epoch {}: {}/{}", j, self.evaluate(x.to_vec()), x.len()),
+                None => println!("Epoch {} complete", j),
+            }
+        }
+    }
+
+    fn update_mini_batch(&mut self, mini_batch: &Vec<(Array2<f32>, Array2<f32>)>, eta: f32) {
+        let mut nabla_b: Vec<Array2<f32>> = Vec::new();
+        let mut nabla_w: Vec<Array2<f32>> = Vec::new();
+        let nbatch = mini_batch.len() as f32;
+
+        for b in self.biases.iter() {
+            nabla_b.push(Array2::zeros(b.dim()));
+        }
+
+        for w in self.weights.iter() {
+            nabla_w.push(Array2::zeros(w.dim()));
+        }
+
+        for (x, y) in mini_batch.iter() {
+            let (delta_nabla_b, delta_nabla_w) = self.backprop(x, y);
+			
+			for (b, nb) in nabla_b.iter_mut().zip(delta_nabla_b.iter()) {
+        		*b += nb;
+			}
+
+			for (w, nw) in nabla_w.iter_mut().zip(delta_nabla_w.iter()) {
+        		*w += nw;
+			}			
+        }
+
+        for (b,nb) in self.biases.iter_mut().zip(nabla_b.iter()) {
+        	*b -= &nb.mapv(|x| x * eta / nbatch)
+        }
+
+        for (w,nw) in self.weights.iter_mut().zip(nabla_w.iter()) {
+        	*w -= &nw.mapv(|x| x * eta / nbatch)
+        }
+    }
+
+    fn backprop(
+        &self,
+        activation: &Array2<f32>,
+        output: &Array2<f32>,
+    ) -> (Vec<Array2<f32>>, Vec<Array2<f32>>) {
+        let mut nabla_b: Vec<Array2<f32>> = Vec::new();
+        let mut nabla_w: Vec<Array2<f32>> = Vec::new();
+        let mut activations = vec![activation.clone()];
+        let mut zs = Vec::new();
+        let mut z = activation.clone();
+		
+		// let start = Instant::now();
+        for (b, w) in self.biases.iter().zip(self.weights.iter()) {
+			// let start = Instant::now();
+            z = w.dot(&z) + b;
+			// let duration = start.elapsed();
+			// println!("mult matriz, {:?}", duration);
+			
+			// let start = Instant::now();
+            zs.push(z.clone());
+			// let duration = start.elapsed();
+			// println!("push + clone, {:?}", duration);
+
+			// let start = Instant::now();
+            activations.push(vec_sigmoid(&z));
+			// let duration = start.elapsed();
+			// println!("push + vec_sigmoid, {:?}", duration);
+
+			// let start = Instant::now();
+            z = vec_sigmoid(&z);
+			// let duration = start.elapsed();
+			// println!("vec_sigmoid, {:?}", duration);
+        }
+		// let duration = start.elapsed();
+		// println!("ola, {:?}", duration);
+
+        let mut delta: Array2<f32> =
+            Network::cost_derivative(&activations[activations.len() - 1], &output)
+            * sigmoid_prime(&zs[zs.len() - 1]);
+        nabla_b.push(delta.clone());
+        nabla_w.push(delta.dot(&(activations[activations.len() - 2]).t()));
+		
+        for l in 2..self.num_layers {
+            z = zs[zs.len() - l as usize].clone();
+            let sp = sigmoid_prime(&z);
+            delta = (self.weights[self.weights.len() - (l as usize) + 1].t()).dot(&delta) * sp;
+            nabla_b.push(delta.clone());
+            nabla_w.push(delta.dot(&(activations[activations.len() - (l as usize) - 1]).t()));
+        }
+
+        nabla_b.reverse();
+        nabla_w.reverse();
+
+        (nabla_b, nabla_w)
     }
 }
 
@@ -285,12 +282,12 @@ fn argmax(v: &Array2<f32>) -> (usize, usize) {
     let mut index = 0;
 
     for i in 0..v.len() {
-        if v[(0,1)] > x {
+        if v[(i, 0)] > x {
             index = i;
         }
     }
 
-    (0, index)
+    (index, 0)
 }
 
 fn sigmoid(x: &f32) -> f32 {
@@ -305,12 +302,13 @@ fn sigmoid_prime(vetor: &Array2<f32>) -> Array2<f32> {
     vetor.mapv(|x| sigmoid(&x) * (1.0 - sigmoid(&x)))
 }
 
-fn aleatory_vec(tamanho: usize) -> Array2<f32> {
-    Array2::random((tamanho, 1), Uniform::new(-1., 1.))
+fn vec_random(tamanho: usize) -> Array2<f32> {
+    Array2::random((tamanho, 1), StandardNormal)
 }
 
-fn aleatory_matrix(linhas: usize, colunas: usize) -> Array2<f32> {
-    Array2::random((linhas, colunas), Uniform::new(-1., 1.))
+fn matrix_random(linhas: usize, colunas: usize) -> Array2<f32> {
+    // Array2::random((linhas, colunas), Uniform::new(-1., 1.))
+	Array2::random((linhas, colunas), StandardNormal)	
 }
 
 fn my_shuffle<T: Clone>(vetor: &[T]) -> Vec<T> {
@@ -347,7 +345,7 @@ fn main() {
     }
 
     println!("Started.");
-    net.sgd(&training_data, 30, 100, 3.0, Some(&test_data));
+    net.sgd(&training_data, 30, 10, 3.0, Some(&test_data));
     let acc = net.evaluate(training_data);
     println!("{:?}", acc);
 }
