@@ -48,12 +48,12 @@ impl MnistData {
     fn new(f: &File) -> Result<MnistData, std::io::Error> {
         let mut gz = GzDecoder::new(f);
         let mut contents: Vec<u8> = Vec::new();
-		gz.read_to_end(&mut contents)?;
+        gz.read_to_end(&mut contents)?;
         let mut r = Cursor::new(&contents);
         let mut sizes: Vec<i32> = Vec::new();
         let mut data: Vec<u8> = Vec::new();
         let magic_number = r.read_i32::<BigEndian>()?;
-		
+
         match magic_number {
             2049 => {
                 sizes.push(r.read_i32::<BigEndian>()?);
