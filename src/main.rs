@@ -119,7 +119,7 @@ impl Network {
 
         for (x, y) in mini_batch.iter() {
             let (delta_nabla_b, delta_nabla_w) = self.backprop(x, y);
-			
+
             for (nb, dnb) in nabla_b.iter_mut().zip(delta_nabla_b.iter()) {
                 *nb += dnb;
             }
@@ -128,7 +128,7 @@ impl Network {
                 *nw += dnw;
             }
         }
-		
+
         for (b, nb) in self.biases.iter_mut().zip(nabla_b.iter_mut()) {
             *b -= &nb.mapv(|x| x * eta / nbatch)
         }
@@ -153,7 +153,7 @@ impl Network {
             z = w.dot(&z) + b;
             zs.push(z.clone());
             activations.push(vec_sigmoid(&z));
-			z = vec_sigmoid(&z);
+            z = vec_sigmoid(&z);
         }
 
         let asize = activations.len();
@@ -161,12 +161,11 @@ impl Network {
             * sigmoid_prime(&zs[zs.len() - 1]);
         nabla_b.push(delta.clone());
         nabla_w.push(delta.dot(&(activations[asize - 2]).t()));
-		
+
         for l in 2..self.num_layers {
             z = zs[zs.len() - l].clone();
             let sp = sigmoid_prime(&z);
-            delta =
-				(self.weights[self.weights.len() - l + 1].t()).dot(&delta) * sp;
+            delta = (self.weights[self.weights.len() - l + 1].t()).dot(&delta) * sp;
             nabla_b.push(delta.clone());
             nabla_w.push(delta.dot(&(activations[asize - l - 1]).t()));
         }
@@ -179,12 +178,13 @@ impl Network {
 }
 
 fn argmax(vector: &Array2<f32>) -> u8 {
-    let x = vector[(0, 0)];
+    let mut x = vector[(0, 0)];
     let mut index = 0;
 
     for i in 0..vector.len() {
         if vector[(i, 0)] > x {
             index = i;
+            x = vector[(i, 0)];
         }
     }
 
