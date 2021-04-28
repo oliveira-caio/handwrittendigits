@@ -119,7 +119,7 @@ impl Network {
 
         for (x, y) in mini_batch.iter() {
             let (delta_nabla_b, delta_nabla_w) = self.backprop(x, y);
-
+			
             for (nb, dnb) in nabla_b.iter_mut().zip(delta_nabla_b.iter()) {
                 *nb += dnb;
             }
@@ -128,13 +128,13 @@ impl Network {
                 *nw += dnw;
             }
         }
-
-        for (nb, dnb) in self.biases.iter_mut().zip(nabla_b.iter()) {
-            *nb -= &dnb.mapv(|x| x * eta / nbatch)
+		
+        for (b, nb) in self.biases.iter_mut().zip(nabla_b.iter_mut()) {
+            *b -= &nb.mapv(|x| x * eta / nbatch)
         }
 
-        for (nw, dnw) in self.weights.iter_mut().zip(nabla_w.iter()) {
-            *nw -= &dnw.mapv(|x| x * eta / nbatch)
+        for (w, nw) in self.weights.iter_mut().zip(nabla_w.iter_mut()) {
+            *w -= &nw.mapv(|x| x * eta / nbatch)
         }
     }
 
@@ -153,7 +153,7 @@ impl Network {
             z = w.dot(&z) + b;
             zs.push(z.clone());
             activations.push(vec_sigmoid(&z));
-            z = vec_sigmoid(&z);
+			z = vec_sigmoid(&z);
         }
 
         let asize = activations.len();
@@ -161,11 +161,12 @@ impl Network {
             * sigmoid_prime(&zs[zs.len() - 1]);
         nabla_b.push(delta.clone());
         nabla_w.push(delta.dot(&(activations[asize - 2]).t()));
-
+		
         for l in 2..self.num_layers {
             z = zs[zs.len() - l].clone();
             let sp = sigmoid_prime(&z);
-            delta = (self.weights[self.weights.len() - l + 1].t()).dot(&delta) * sp;
+            delta =
+				(self.weights[self.weights.len() - l + 1].t()).dot(&delta) * sp;
             nabla_b.push(delta.clone());
             nabla_w.push(delta.dot(&(activations[asize - l - 1]).t()));
         }
@@ -177,12 +178,12 @@ impl Network {
     }
 }
 
-fn argmax(v: &Array2<f32>) -> u8 {
-    let x = v[(0, 0)];
+fn argmax(vector: &Array2<f32>) -> u8 {
+    let x = vector[(0, 0)];
     let mut index = 0;
 
-    for i in 0..v.len() {
-        if v[(i, 0)] > x {
+    for i in 0..vector.len() {
+        if vector[(i, 0)] > x {
             index = i;
         }
     }
@@ -202,22 +203,22 @@ fn sigmoid_prime(vector: &Array2<f32>) -> Array2<f32> {
     vector.mapv(|x| sigmoid(x) * (1.0 - sigmoid(x)))
 }
 
-fn vec_random(tamanho: usize) -> Array2<f32> {
-    Array2::random((tamanho, 1), StandardNormal)
+fn vec_random(size: usize) -> Array2<f32> {
+    Array2::random((size, 1), StandardNormal)
 }
 
-fn matrix_random(linhas: usize, colunas: usize) -> Array2<f32> {
-    Array2::random((linhas, colunas), StandardNormal)
+fn matrix_random(rows: usize, columns: usize) -> Array2<f32> {
+    Array2::random((rows, columns), StandardNormal)
 }
 
-fn my_shuffle<T: Clone>(vetor: &[T]) -> Vec<T> {
+fn my_shuffle<T: Clone>(vector: &[T]) -> Vec<T> {
     let mut shuffled = Vec::new();
-    let mut aux: Vec<usize> = (0..vetor.len()).collect();
+    let mut aux: Vec<usize> = (0..vector.len()).collect();
 
     aux.shuffle(&mut rand::thread_rng());
 
     for i in 0..aux.len() {
-        shuffled.push(vetor[aux[i]].clone());
+        shuffled.push(vector[aux[i]].clone());
     }
 
     shuffled
@@ -235,5 +236,5 @@ fn main() {
     let training_data = loadmnist::load_data("train").unwrap();
     let test_data = loadmnist::load_data("t10k").unwrap();
 
-    net.sgd(&training_data, 30, 20, 3.0, Some(&test_data));
+    net.sgd(&training_data, 30, 10, 3.0, Some(&test_data));
 }
