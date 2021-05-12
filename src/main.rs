@@ -4,6 +4,8 @@ use ndarray_rand::rand_distr::StandardNormal;
 use ndarray_rand::RandomExt;
 use rand::seq::SliceRandom;
 use std::f32::consts::E;
+// use image::GenericImageView;
+// use ndarray_image::open_gray_image;
 mod loadmnist;
 
 #[derive(Debug)]
@@ -235,6 +237,28 @@ fn main() {
     let mut net = Network::new(net_sizes);
     let training_data = loadmnist::load_data("train").unwrap();
     let test_data = loadmnist::load_data("t10k").unwrap();
+		
+    net.sgd(&training_data, 10, 10, 3.0, None);
 
-    net.sgd(&training_data, 30, 10, 3.0, Some(&test_data));
+	let img = image::open("mnist_first_digit.png").unwrap().to_luma8();
+	let img2 = img.into_vec();	
+	let mut k = 0;
+	let mut l = 0;
+	let mut bla: Array2<f32> = Array2::zeros((28,28));
+	for i in 0..784 {
+		if (i % 28) == 0 && i > 27 {
+			k += 1;
+			l = 0;
+		}
+		bla[(k,l)] = img2[i] as f32 / 255.0;
+		l += 1;
+	}
+	let bla = bla.into_shape((784,1)).unwrap();
+
+	let bla2 = Network::feedforward(&net, &bla);
+	println!("{:?}", bla2);
+	if argmax(&bla2) == 5 {
+	 	println!("deu bom.");
+	}
+	// println!("deu ruim.");
 }
