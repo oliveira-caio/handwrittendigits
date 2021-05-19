@@ -3,11 +3,11 @@ use ndarray::Array2;
 use ndarray_rand::rand_distr::StandardNormal;
 use ndarray_rand::RandomExt;
 use rand::seq::SliceRandom;
-use std::f32::consts::E;
 use std::{
     fs::File,
     io::{prelude::*, BufReader},
     path::Path,
+	f32::consts::E,
 };
 mod loadmnist;
 
@@ -266,13 +266,29 @@ fn main() {
 	}
 
 	let mut ans = 0;
+	let mut ans2 = 0;
 	for i in 0..10000 {
 		let bla2 = Network::feedforward(&net, &(test_data_two[i].0));
 		if argmax(&bla2) == test_data_two[i].1 {
 	 		ans += 1;
 		}
+		if inner_prod(&test_data[i].image, &test_data_two[i].0, 784) < 0.001 {
+			ans2 += 1;
+		}
 	}
-	println!("Final: {}", ans);
+	
+	println!("Final: {} \t Distancias: {}", ans, ans2);
+}
+
+fn inner_prod(v1: &Array2<f32>, v2: &Array2<f32>, len: usize) -> f32 {
+	let mut result: f32 = 0.0;
+	
+	for i in 0..len {
+		result += v1[(i,0)] * v2[(i,0)];
+	}
+
+	println!("{} \t", result.sqrt());
+	result.sqrt()
 }
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
