@@ -4,8 +4,11 @@ use ndarray_rand::rand_distr::StandardNormal;
 use ndarray_rand::RandomExt;
 use rand::seq::SliceRandom;
 use std::f32::consts::E;
-// use image::GenericImageView;
-// use ndarray_image::open_gray_image;
+use std::{
+    fs::File,
+    io::{prelude::*, BufReader},
+    path::Path,
+};
 mod loadmnist;
 
 #[derive(Debug)]
@@ -237,28 +240,45 @@ fn main() {
     let mut net = Network::new(net_sizes);
     let training_data = loadmnist::load_data("train").unwrap();
     let test_data = loadmnist::load_data("t10k").unwrap();
-		
-    net.sgd(&training_data, 10, 10, 3.0, None);
 
-	let img = image::open("mnist_first_digit.png").unwrap().to_luma8();
-	let img2 = img.into_vec();	
-	let mut k = 0;
-	let mut l = 0;
-	let mut bla: Array2<f32> = Array2::zeros((28,28));
-	for i in 0..784 {
-		if (i % 28) == 0 && i > 27 {
-			k += 1;
-			l = 0;
+    net.sgd(&training_data, 10, 10, 3.0, Some(&test_data));
+
+	let mut classifications: Vec<u8> = Vec::new();
+    let lines = lines_from_file("classes.txt");
+    for line in lines {
+		let aux: u8 = match line.trim().parse() {
+			Ok(num) => num,
+			Err(_) => return,
+		};
+        classifications.push(aux);
+    }
+	
+	let mut test_data_two: Vec<(Array2<f32>,u8)> = Vec::new();
+	for i in 60000..70000 {
+		let img  = image::open(format!("data/images/test/img_{0}.png",
+									  i)).unwrap().to_luma8();
+		let img2 = img.into_vec();
+		let mut aux: Array2<f32> = Array2::zeros((784,1));
+		for j in 0..784 {
+			aux[(j,0)] = 1.0 - (img2[j] as f32 / 255.0);
 		}
-		bla[(k,l)] = img2[i] as f32 / 255.0;
-		l += 1;
+		test_data_two.push((aux,classifications[i-60000]));
 	}
-	let bla = bla.into_shape((784,1)).unwrap();
 
-	let bla2 = Network::feedforward(&net, &bla);
-	println!("{:?}", bla2);
-	if argmax(&bla2) == 5 {
-	 	println!("deu bom.");
+	let mut ans = 0;
+	for i in 0..10000 {
+		let bla2 = Network::feedforward(&net, &(test_data_two[i].0));
+		if argmax(&bla2) == test_data_two[i].1 {
+	 		ans += 1;
+		}
 	}
-	// println!("deu ruim.");
+	println!("Final: {}", ans);
+}
+
+fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
+    let file = File::open(filename).expect("no such file");
+    let buf = BufReader::new(file);
+    buf.lines()
+        .map(|l| l.expect("Could not parse line"))
+        .collect()
 }
