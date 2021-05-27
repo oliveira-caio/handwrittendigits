@@ -291,6 +291,16 @@ fn main() {
 		}
 	}
 	println!("Final: {}", ans);
+
+    let png = image::open("data/pics/img_0.png").unwrap().to_luma8();
+    let img2 = png.into_vec();
+    let mut aux: Array2<f32> = Array2::zeros((784,1));
+    for j in 0..784 {
+        aux[(j,0)] = 1.0 - (img2[j] as f32 / 255.0);
+    }
+    let bla2 = Network::feedforward(&net, &aux);
+    println!("{:?}", argmax(&bla2));
+    println!("{:?}", bla2);
 }
 
 fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
