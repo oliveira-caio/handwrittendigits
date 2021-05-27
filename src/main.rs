@@ -4,13 +4,8 @@ use ndarray_rand::rand_distr::StandardNormal;
 use ndarray_rand::RandomExt;
 use rand::seq::SliceRandom;
 use std::f32::consts::E;
-use std::{
-    fs::File,
-    io::{prelude::*, BufReader},
-    path::Path,
-};
 mod loadmnist;
-mod image_io;
+mod augmentation;
 
 #[derive(Debug)]
 struct Network {
@@ -88,7 +83,9 @@ impl Network {
         let mut converted_training = Vec::new();
 
         for t in training_data {
-            converted_training.push((t.image.clone(), u8_to_array2(t.classification)));
+            for _ in 0..5 {
+                converted_training.push((augmentation::transform(&t.image), u8_to_array2(t.classification)));
+            }
         }
 
         for j in 0..epochs {
@@ -242,71 +239,5 @@ fn main() {
     let training_data = loadmnist::load_data("train").unwrap();
     let test_data = loadmnist::load_data("t10k").unwrap();
 
-    net.sgd(&training_data, 10, 10, 3.0, Some(&test_data));
-
-    /*
-	let mut classifications: Vec<u8> = Vec::new();
-    let lines = lines_from_file("classes.txt");
-    for line in lines {
-		let aux: u8 = match line.trim().parse() {
-			Ok(num) => num,
-			Err(_) => return,
-		};
-        classifications.push(aux);
-    }
-    */
-	
-    /*
-	let mut test_data_two: Vec<(Array2<f32>,u8)> = Vec::new();
-	for i in 60000..70000 {
-		let img  = image::open(format!("data/images/test/img_{0}.png",
-									  i)).unwrap().to_luma8();
-		let img2 = img.into_vec();
-		let mut aux: Array2<f32> = Array2::zeros((784,1));
-		for j in 0..784 {
-			aux[(j,0)] = 1.0 - (img2[j] as f32 / 255.0);
-		}
-		test_data_two.push((aux,classifications[i-60000]));
-	}
-    */
-
-    /*
-    for (x, y) in test_data.into_iter().zip(&test_data_two) {
-        println!("original {:?} extracted {:?}", x.classification, y.1);
-     }
-     */
-
-	let mut ans = 0;
-	for img in test_data.into_iter() {
-        image_io::to_image(&img.image, "data/images/tmp/tmp.png");
-        let png = image::open("data/images/tmp/tmp.png").unwrap().to_luma8();
-		let img2 = png.into_vec();
-		let mut aux: Array2<f32> = Array2::zeros((784,1));
-		for j in 0..784 {
-			aux[(j,0)] = 1.0 - (img2[j] as f32 / 255.0);
-		}
-		let bla2 = Network::feedforward(&net, &aux);
-		if argmax(&bla2) == img.classification {
-	 		ans += 1;
-		}
-	}
-	println!("Final: {}", ans);
-
-    let png = image::open("data/pics/img_0.png").unwrap().to_luma8();
-    let img2 = png.into_vec();
-    let mut aux: Array2<f32> = Array2::zeros((784,1));
-    for j in 0..784 {
-        aux[(j,0)] = 1.0 - (img2[j] as f32 / 255.0);
-    }
-    let bla2 = Network::feedforward(&net, &aux);
-    println!("{:?}", argmax(&bla2));
-    println!("{:?}", bla2);
-}
-
-fn lines_from_file(filename: impl AsRef<Path>) -> Vec<String> {
-    let file = File::open(filename).expect("no such file");
-    let buf = BufReader::new(file);
-    buf.lines()
-        .map(|l| l.expect("Could not parse line"))
-        .collect()
+    net.sgd(&training_data, 10, 100, 3.0, Some(&test_data));
 }
