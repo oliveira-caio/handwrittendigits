@@ -1,7 +1,6 @@
 use ndarray::Array2;
 use ndarray::Array1;
 use ndarray::array;
-use ndarray_linalg::solve::Inverse;
 
 pub fn matrix_to_freq(matrix: &Array2<u8>) -> Array1<i32> {
     let dimensions = matrix.dim();
@@ -13,6 +12,24 @@ pub fn matrix_to_freq(matrix: &Array2<u8>) -> Array1<i32> {
     freqs
 }
 
-pub fn inverte(matrix: &Array2<f32>) -> Array2<f32> {
-    matrix.inv().unwrap()
+fn regression(pixels: &Array2<f32>,
+			  freq: &Array2<f32>,
+			  deg: usize)
+			  -> Vec<f32> {
+	let mut coeffs = vec![0.0; deg];
+
+	for k in 0..deg {
+		for i in deg..k {
+			coeffs[i] = (freq[(i, 0)] - freq[(i-1, 0)]) / (pixels[(i, 0)]
+														   - pixels[(i-k-1, 0)]);
+		}
+	}
+
+	for k in deg-1..-1 {
+		for i in k..deg {
+			coeffs[i] = freq[(i, 0)] - freq[(i+1, 0)] * pixels[(k, 0)];
+		}
+	}
+	
+	coeffs
 }
