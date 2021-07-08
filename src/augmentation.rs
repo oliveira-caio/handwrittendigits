@@ -16,7 +16,7 @@ fn contrast(img: &Array2<f32>, intensity: f32) -> Array2<f32> {
 fn jitter(img: &Array2<f32>, intensity: f32) -> Array2<f32> {
     let mut random_matrix:Array2<f32> = Array2::random(img.raw_dim(), StandardNormal);
     random_matrix = random_matrix.clone() + (1.0 - random_matrix)*(1.0-intensity);
-    let jitter_img = (img.dot(&random_matrix)) + (-random_matrix.clone()+1.0)/2.0;
+    let jitter_img = img.to_owned() * random_matrix.clone() + (-random_matrix.clone()+1.0)/2.0;
 
     jitter_img
 }

@@ -6,6 +6,8 @@ use rand::seq::SliceRandom;
 use std::f32::consts::E;
 mod loadmnist;
 mod augmentation;
+mod image_io;
+mod regression;
 
 #[derive(Debug)]
 struct Network {
